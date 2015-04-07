@@ -13,7 +13,8 @@
         <div style="float:right">
           {% if current_user %}
             <a href="/compose">{{ _("New post") }}</a> -
-            <a href="/auth/logout?next={{ url_escape(request.uri) }}">{{ _("Sign out") }}</a>
+            <a href="/auth/logout?next={{ url_escape(request.uri) }}">{{ _("Sign out") }}</a> -
+            <a href="/search">{{ _("Search") }}</a>
           {% else %}
             {% raw _('<a href="%(url)s">Sign in</a> to compose/edit') % {"url": "/auth/login?next=" + url_escape(request.uri)} %}
           {% end %}

@@ -38,12 +38,15 @@ class Application(tornado.web.Application):
             (r"/auth/create", AuthCreateHandler),
             (r"/auth/login", AuthLoginHandler),
             (r"/auth/logout", AuthLogoutHandler),
+            (r"/search/([^/]+)", SearchHandler),
         ]
         settings = dict(
             blog_title=u"Tornado Blog",
             template_path=os.path.join(os.path.dirname(__file__), "templates"),
             static_path=os.path.join(os.path.dirname(__file__), "static"),
-            ui_modules={"Entry": EntryModule},
+            ui_modules={"Entry": EntryModule,
+                        "Search": SearchModule
+                        },
             xsrf_cookies=True,
             cookie_secret="__TODO:_GENERATE_YOUR_OWN_RANDOM_VALUE_HERE__",
             login_url="/auth/login",
@@ -76,7 +79,8 @@ class BaseHandler(tornado.web.RequestHandler):
 
     def get_current_user(self):
         user_id = self.get_secure_cookie("blogdemo_user")
-        if not user_id: return None
+        if not user_id:
+            return None
         return self.db.get("SELECT * FROM authors WHERE id = %s", int(user_id))
 
     def any_author_exists(self):
@@ -96,8 +100,7 @@ class HomeHandler(BaseHandler):
 class EntryHandler(BaseHandler):
     def get(self, slug):
         entry = self.db.get("SELECT * FROM entries WHERE slug = %s", slug)
-        if not entry:
-            raise tornado.web.HTTPError(404)
+        if not entry: raise tornado.web.HTTPError(404)
         self.render("entry.html", entry=entry)
 
 
@@ -206,9 +209,22 @@ class AuthLogoutHandler(BaseHandler):
         self.redirect(self.get_argument("next", "/"))
 
 
+class SearchHandler(BaseHandler):
+    def get(self, find_text):
+        search = self.db.get("SELECT * FROM entries WHERE html LIKE %s LIMIT 1", ("%" + find_text + "%"))
+        if not search:
+            raise tornado.web.HTTPError(404)
+        self.render("search.html", search=search)
+
+
 class EntryModule(tornado.web.UIModule):
     def render(self, entry):
         return self.render_string("modules/entry.html", entry=entry)
+
+
+class SearchModule(tornado.web.UIModule):
+    def render(self, search):
+        return self.render_string("modules/search.html", search=search)
 
 
 def main():
@@ -216,6 +232,7 @@ def main():
     http_server = tornado.httpserver.HTTPServer(Application())
     http_server.listen(options.port)
     tornado.ioloop.IOLoop.current().start()
+
 
 if __name__ == "__main__":
     main()
