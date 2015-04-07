@@ -1,4 +1,4 @@
-
+import logging
 import bcrypt
 import concurrent.futures
 import MySQLdb
@@ -38,7 +38,7 @@ class Application(tornado.web.Application):
             (r"/auth/create", AuthCreateHandler),
             (r"/auth/login", AuthLoginHandler),
             (r"/auth/logout", AuthLogoutHandler),
-            (r"/search/([^/]+)", SearchHandler),
+            (r"/search/?text=([^/]+)", SearchHandler),
         ]
         settings = dict(
             blog_title=u"Tornado Blog",
@@ -100,7 +100,8 @@ class HomeHandler(BaseHandler):
 class EntryHandler(BaseHandler):
     def get(self, slug):
         entry = self.db.get("SELECT * FROM entries WHERE slug = %s", slug)
-        if not entry: raise tornado.web.HTTPError(404)
+        if not entry:
+            raise tornado.web.HTTPError(404)
         self.render("entry.html", entry=entry)
 
 
