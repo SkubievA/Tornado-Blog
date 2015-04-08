@@ -38,7 +38,7 @@ class Application(tornado.web.Application):
             (r"/auth/create", AuthCreateHandler),
             (r"/auth/login", AuthLoginHandler),
             (r"/auth/logout", AuthLogoutHandler),
-            (r"/search/?text=([^/]+)", SearchHandler),
+            (r"/search", SearchHandler),
         ]
         settings = dict(
             blog_title=u"Tornado Blog",
@@ -211,11 +211,15 @@ class AuthLogoutHandler(BaseHandler):
 
 
 class SearchHandler(BaseHandler):
-    def get(self, find_text):
-        search = self.db.get("SELECT * FROM entries WHERE html LIKE %s LIMIT 1", ("%" + find_text + "%"))
-        if not search:
-            raise tornado.web.HTTPError(404)
-        self.render("search.html", search=search)
+    @gen.coroutine
+    def post(self):
+        if self.get_argument("text") != '':
+            searches = self.db.query("SELECT * FROM entries WHERE html LIKE %s LIMIT 5", ("%" + self.get_argument("text") + "%"))
+            if not searches:
+                self.render("search.html", search=None)
+            self.render("search.html", search=searches)
+        else:
+            self.render("search.html", search=None)
 
 
 class EntryModule(tornado.web.UIModule):
@@ -224,8 +228,8 @@ class EntryModule(tornado.web.UIModule):
 
 
 class SearchModule(tornado.web.UIModule):
-    def render(self, search):
-        return self.render_string("modules/search.html", search=search)
+    def render(self, searches):
+        return self.render_string("modules/search.html", search=searches)
 
 
 def main():

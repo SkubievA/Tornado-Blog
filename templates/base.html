@@ -12,10 +12,11 @@
       <div id="header">
         <div style="float:right">
           {% if current_user %}
+            <form action="/search" method="POST">
             <a href="/compose">{{ _("New post") }}</a> -
             <a href="/auth/logout?next={{ url_escape(request.uri) }}">{{ _("Sign out") }}</a> -
-            <form action="/search/" method="get">
-                <input name="text" type="text">
+                <input id="text" name="text" size="13" type="text">
+                {% module xsrf_form_html() %}
                 <input type="submit" value="Search">
             </form>
           {% else %}

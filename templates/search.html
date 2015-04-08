@@ -1,5 +1,15 @@
 {% extends "base.html" %}
 
 {% block body %}
-  {% module Search(search) %}
+    <h1>Site search: </h1>
+    <br>
+    {% if search %}
+        {% for x in search %}
+            <div id="post">
+                {% module Search(x) %}
+            </div>
+        {% end %}
+    {% else %}
+        Search returned no results.
+    {% end %}
 {% end %}

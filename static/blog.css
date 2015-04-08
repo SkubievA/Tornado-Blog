@@ -151,3 +151,8 @@ a code {
   height: 500px;
   line-height: 16pt;
 }
+
+#post {
+    background-color: #d6fff8;
+    font-family: "Helvetica Nue", Helvetica, Arial, sans-serif;
+}
