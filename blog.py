@@ -39,13 +39,16 @@ class Application(tornado.web.Application):
             (r"/auth/login", AuthLoginHandler),
             (r"/auth/logout", AuthLogoutHandler),
             (r"/search", SearchHandler),
-        ]
+            (r"/english", EnglishHandler),
+            (r"/english/add", EnglishAddHandler),
+            ]
         settings = dict(
             blog_title=u"Tornado Blog",
             template_path=os.path.join(os.path.dirname(__file__), "templates"),
             static_path=os.path.join(os.path.dirname(__file__), "static"),
             ui_modules={"Entry": EntryModule,
-                        "Search": SearchModule
+                        "Search": SearchModule,
+                        "English": EnglishModule,
                         },
             xsrf_cookies=True,
             cookie_secret="__TODO:_GENERATE_YOUR_OWN_RANDOM_VALUE_HERE__",
@@ -137,7 +140,8 @@ class ComposeHandler(BaseHandler):
         html = markdown.markdown(text)
         if id:
             entry = self.db.get("SELECT * FROM entries WHERE id = %s", int(id))
-            if not entry: raise tornado.web.HTTPError(404)
+            if not entry:
+                raise tornado.web.HTTPError(404)
             slug = entry.slug
             self.db.execute(
                 "UPDATE entries SET title = %s, markdown = %s, html = %s "
@@ -151,7 +155,8 @@ class ComposeHandler(BaseHandler):
                 slug = "entry"
             while True:
                 e = self.db.get("SELECT * FROM entries WHERE slug = %s", slug)
-                if not e: break
+                if not e:
+                    break
                 slug += "-2"
             self.db.execute(
                 "INSERT INTO entries (author_id,title,slug,markdown,html,"
@@ -214,12 +219,37 @@ class SearchHandler(BaseHandler):
     @gen.coroutine
     def post(self):
         if self.get_argument("text") != '':
-            searches = self.db.query("SELECT * FROM entries WHERE html LIKE %s LIMIT 5", ("%" + self.get_argument("text") + "%"))
+            searches = self.db.query("SELECT * FROM entries WHERE html LIKE %s LIMIT 5",
+                                     ("%" + self.get_argument("text") + "%"))
             if not searches:
                 self.render("search.html", search=None)
             self.render("search.html", search=searches)
         else:
             self.render("search.html", search=None)
+
+
+class EnglishHandler(BaseHandler):
+    def get(self):
+        english = self.db.query("SELECT * FROM english")
+        if not english:
+            self.render("english.html", english=None)
+        self.render("english.html", english=english)
+
+
+class EnglishAddHandler(BaseHandler):
+    def get(self):
+        self.render("english.html")
+
+    @gen.coroutine
+    def post(self):
+        english = tornado.escape.utf8(self.get_argument("english"))
+        russian = tornado.escape.utf8(self.get_argument("russian"))
+        if english != '' and russian != '':
+            result = self.db.execute(
+                "INSERT INTO english (english, russian) "
+                "VALUES (%s, %s)",
+                english, russian)
+        self.redirect("/english")
 
 
 class EntryModule(tornado.web.UIModule):
@@ -230,6 +260,11 @@ class EntryModule(tornado.web.UIModule):
 class SearchModule(tornado.web.UIModule):
     def render(self, searches):
         return self.render_string("modules/search.html", search=searches)
+
+
+class EnglishModule(tornado.web.UIModule):
+    def render(self, english):
+        return self.render_string("modules/english.html", english=english)
 
 
 def main():

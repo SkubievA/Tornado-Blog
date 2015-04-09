@@ -15,6 +15,7 @@
             <form action="/search" method="POST">
             <a href="/compose">{{ _("New post") }}</a> -
             <a href="/auth/logout?next={{ url_escape(request.uri) }}">{{ _("Sign out") }}</a> -
+            <a href="/english">{{ _("English") }}</a>
                 <input id="text" name="text" size="13" type="text">
                 {% module xsrf_form_html() %}
                 <input type="submit" value="Search">
